@@ -25,6 +25,7 @@ namespace NzbDrone.Core.Download.TrackedDownloads
         private readonly IParsingService _parsingService;
         private readonly IHistoryService _historyService;
         private readonly IEventAggregator _eventAggregator;
+        private readonly ITrackedDownloadAlreadyImportService _trackedDownloadAlreadyImportService;
         private readonly Logger _logger;
         private readonly ICached<TrackedDownload> _cache;
 
@@ -32,11 +33,13 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                                       ICacheManager cacheManager,
                                       IHistoryService historyService,
                                       IEventAggregator eventAggregator,
+                                      ITrackedDownloadAlreadyImportService trackedDownloadAlreadyImportService,
                                       Logger logger)
         {
             _parsingService = parsingService;
             _historyService = historyService;
             _eventAggregator = eventAggregator;
+            _trackedDownloadAlreadyImportService = trackedDownloadAlreadyImportService;
             _cache = cacheManager.GetCache<TrackedDownload>(GetType());
             _logger = logger;
         }
@@ -72,7 +75,7 @@ namespace NzbDrone.Core.Download.TrackedDownloads
         {
             var existingItem = Find(downloadItem.DownloadId);
 
-            if (existingItem != null && existingItem.State != TrackedDownloadStage.Downloading)
+            if (existingItem != null && existingItem.State != TrackedDownloadState.Downloading)
             {
                 LogItemChange(existingItem, existingItem.DownloadItem, downloadItem);
 
@@ -93,7 +96,9 @@ namespace NzbDrone.Core.Download.TrackedDownloads
             try
             {
                 var parsedEpisodeInfo = Parser.Parser.ParseTitle(trackedDownload.DownloadItem.Title);
-                var historyItems = _historyService.FindByDownloadId(downloadItem.DownloadId);
+                var historyItems = _historyService.FindByDownloadId(downloadItem.DownloadId)
+                                                  .OrderByDescending(h => h.Date)
+                                                  .ToList();
 
                 if (parsedEpisodeInfo != null)
                 {
@@ -102,8 +107,19 @@ namespace NzbDrone.Core.Download.TrackedDownloads
 
                 if (historyItems.Any())
                 {
-                    var firstHistoryItem = historyItems.OrderByDescending(h => h.Date).First();
-                    trackedDownload.State = GetStateFromHistory(firstHistoryItem.EventType);
+                    var firstHistoryItem = historyItems.First();
+                    var state = GetStateFromHistory(firstHistoryItem.EventType);
+
+                    if (state == TrackedDownloadState.Imported)
+                    {
+                        var allImported = _trackedDownloadAlreadyImportService.IsImported(trackedDownload, historyItems);
+
+                        trackedDownload.State = allImported ? TrackedDownloadState.Imported : TrackedDownloadState.Downloading;
+                    }
+                    else
+                    {
+                        trackedDownload.State = state;
+                    }
 
                     var grabbedEvent = historyItems.FirstOrDefault(v => v.EventType == HistoryEventType.Grabbed);
                     trackedDownload.Indexer = grabbedEvent?.Data["indexer"];
@@ -158,7 +174,7 @@ namespace NzbDrone.Core.Download.TrackedDownloads
         }
 
         private void LogItemChange(TrackedDownload trackedDownload, DownloadClientItem existingItem, DownloadClientItem downloadItem)
-	{
+	    {
             if (existingItem == null ||
                 existingItem.Status != downloadItem.Status ||
                 existingItem.CanBeRemoved != downloadItem.CanBeRemoved ||
@@ -174,16 +190,16 @@ namespace NzbDrone.Core.Download.TrackedDownloads
             }
         }
 
-        private static TrackedDownloadStage GetStateFromHistory(HistoryEventType eventType)
+        private static TrackedDownloadState GetStateFromHistory(HistoryEventType eventType)
         {
             switch (eventType)
             {
                 case HistoryEventType.DownloadFolderImported:
-                    return TrackedDownloadStage.Imported;
+                    return TrackedDownloadState.Imported;
                 case HistoryEventType.DownloadFailed:
-                    return TrackedDownloadStage.DownloadFailed;
+                    return TrackedDownloadState.Failed;
                 default:
-                    return TrackedDownloadStage.Downloading;
+                    return TrackedDownloadState.Downloading;
             }
         }
     }

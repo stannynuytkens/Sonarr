@@ -4,6 +4,7 @@ using Nancy.Responses;
 using NzbDrone.Common.TPL;
 using NzbDrone.Core.Datastore.Events;
 using NzbDrone.Core.Download.Pending;
+using NzbDrone.Core.Download.TrackedDownloads;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Queue;
 using NzbDrone.SignalR;
@@ -49,10 +50,10 @@ namespace Sonarr.Api.V3.Queue
                 TotalCount = queue.Count + pending.Count,
                 Count = queue.Count(q => q.Series != null) + pending.Count,
                 UnknownCount = queue.Count(q => q.Series == null),
-                Errors = queue.Any(q => q.Series != null && q.TrackedDownloadStatus.Equals("Error", StringComparison.InvariantCultureIgnoreCase)),
-                Warnings = queue.Any(q => q.Series != null && q.TrackedDownloadStatus.Equals("Warning", StringComparison.InvariantCultureIgnoreCase)),
-                UnknownErrors = queue.Any(q => q.Series == null && q.TrackedDownloadStatus.Equals("Error", StringComparison.InvariantCultureIgnoreCase)),
-                UnknownWarnings = queue.Any(q => q.Series == null && q.TrackedDownloadStatus.Equals("Warning", StringComparison.InvariantCultureIgnoreCase))
+                Errors = queue.Any(q => q.Series != null && q.TrackedDownloadStatus.HasValue && q.TrackedDownloadStatus.Value == TrackedDownloadStatus.Error),
+                Warnings = queue.Any(q => q.Series != null && q.TrackedDownloadStatus.HasValue && q.TrackedDownloadStatus.Value == TrackedDownloadStatus.Warning),
+                UnknownErrors = queue.Any(q => q.Series == null && q.TrackedDownloadStatus.HasValue && q.TrackedDownloadStatus.Value == TrackedDownloadStatus.Error),
+                UnknownWarnings = queue.Any(q => q.Series == null && q.TrackedDownloadStatus.HasValue && q.TrackedDownloadStatus.Value == TrackedDownloadStatus.Warning)
             };
 
             _broadcastDebounce.Resume();

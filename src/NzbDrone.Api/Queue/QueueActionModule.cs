@@ -87,12 +87,7 @@ namespace NzbDrone.Api.Queue
 
         private JsonResponse<QueueResource> Import()
         {
-            var resource = Request.Body.FromJson<QueueResource>();
-            var trackedDownload = GetTrackedDownload(resource.Id);
-                
-            _completedDownloadService.Process(trackedDownload, true);
-
-            return resource.AsResponse();
+            throw new BadRequestException("No longer available");
         }
 
         private JsonResponse<QueueResource> Grab()
