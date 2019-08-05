@@ -153,8 +153,10 @@
     <Compile Include="DecisionEngine\Specifications\MultiSeasonSpecification.cs" />
     <Compile Include="DecisionEngine\Specifications\UpgradeAllowedSpecification.cs" />
     <Compile Include="Download\Clients\Transmission\TransmissionConfig.cs" />
+    <Compile Include="Download\DownloadIgnoredEvent.cs" />
     <Compile Include="Download\DownloadsProcesseEvent.cs" />
     <Compile Include="Download\DownloadProcessingService.cs" />
+    <Compile Include="Download\IgnoredDownloadService.cs" />
     <Compile Include="Download\ProcessMonitoredDownloadsCommand.cs" />
     <Compile Include="Download\RefreshMonitoredDownloadsCommand.cs" />
     <Compile Include="Download\TrackedDownloads\TrackedDownloadAlreadyImportService.cs" />

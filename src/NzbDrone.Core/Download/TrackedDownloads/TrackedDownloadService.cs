@@ -198,6 +198,8 @@ namespace NzbDrone.Core.Download.TrackedDownloads
                     return TrackedDownloadState.Imported;
                 case HistoryEventType.DownloadFailed:
                     return TrackedDownloadState.Failed;
+                case HistoryEventType.DownloadIgnored:
+                    return TrackedDownloadState.Ignored;
                 default:
                     return TrackedDownloadState.Downloading;
             }
