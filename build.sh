@@ -199,7 +199,7 @@ PackageMono()
     # That list defines assemblies that are prohibited from being loaded from the appdir, instead loading from mono GAC.
 
     # We have debian dependencies to get these installed or facades from mono 5.10+
-    for assembly in System.IO.Compression System.Runtime.InteropServices.RuntimeInformation System.Net.Http System.Globalization.Extensions System.Text.Encoding.CodePages System.Threading.Overlapped
+    for assembly in System.IO.Compression System.Runtime.InteropServices.RuntimeInformation System.Net.Http System.Globalization.Extensions System.Text.Encoding.CodePages System.Threading.Overlapped System.Numerics.Vectors
     do
         if [ -e $outputFolderLinux/$assembly.dll ]; then
             if [ -e $sourceFolder/Libraries/Mono/$assembly.dll ]; then
